@@ -1,80 +1,131 @@
-def depositar(saldo, extrato):
-    valor = float(input("Informe o valor do depósito: "))
-    if valor > 0:
-        saldo += valor
-        extrato.append(f"Depósito: R$ {valor:.2f}")
-        print(f"Depósito de R${valor:.2f} reaizado com sucesso.")
-    else:
-        print("Valor inválido. O valor deve ser positivo.")
-    return saldo, extrato
-
-
-def sacar(saldo, extrato, saques_realizados):
-    LIMITE_SAQUE = 3
-    LIMITE_VALOR_SAQUE = 500
-
-    if saques_realizados >= LIMITE_SAQUE:
-        print("Limite de saque diário atingido.")
-        return saldo, extrato, saques_realizados
-
-    saldo = float(input("Informe o valor do saque: "))
-    if saldo <= 0:
-        print("Valor inválido. O valor deve ser positivo.")
-        
-    elif saldo > LIMITE_VALOR_SAQUE:
-        print(f"Valor máximo por saque é R${LIMITE_VALOR_SAQUE}.")
-        
-    elif saldo > saldo:
-        print("Saldo insuficiente.")
-        
-    else:
-        saldo -= saldo
-        extrato.append(f"Saque: R$ {saldo:.2f}")
-        saques_realizados += 1
-        print(f"Saque de R${saldo:.2f} reaizado com sucesso.")
-    return saldo, extrato, saques_realizados
-
-
-def exibir_extrato(saldo, extrato):
-    print("\n========== EXTRATO ==========")
-    if not extrato:
-        print("Não houve movimentações na conta.")
-    else:
-        for operacao in extrato:
-            print(operacao)
-    print(f"Saldo atual: R${saldo:.2f}")
+usuarios = []
+contas = []
+AGENCIA = "0001"
 
 
 def main():
-    saldo = 0
-    extrato = []
-    LIMITE_SAQUES = 3
-    saques_realizados = 0
-
     while True:
-        print("\n========== MENU ==========")
-        print("1. Depositar")
-        print("2. Sacar")
-        print("3. Extrato")
-        print("4. Sair")
+        print("\n=== MENU ===")
+        print("1. Criar usuário")
+        print("2. Criar conta")
+        print("3. Depositar")
+        print("4. Sacar")
+        print("5. Extrato")
+        print("6. Sair")
 
-        opcao = input("Escolha uma opção: ")
+        opcao = input("Opção: ")
 
         if opcao == "1":
-            saldo, extrato = depositar(saldo, extrato)
-
+            criar_usuario()
         elif opcao == "2":
-            saldo, extrato, saques_realizados = sacar(saldo, extrato, saques_realizados)
-
+            criar_conta()
         elif opcao == "3":
-            exibir_extrato(saldo, extrato)
-
+            depositar()
         elif opcao == "4":
-            print("Saindo do sistema...")
+            sacar()
+        elif opcao == "5":
+            extrato()
+        elif opcao == "6":
             break
-
         else:
-            print("Opção inválida! Tente novamente.")
+            print("Opção inválida!")
 
 
-main()
+def criar_usuario():
+    cpf = input("CPF (somente números): ")
+    if any(u["cpf"] == cpf for u in usuarios):
+        print("Usuário já existe!")
+        return
+
+    usuarios.append(
+        {
+            "nome": input("Nome: "),
+            "cpf": cpf,
+            "data_nascimento": input("Data nasc. (dd/mm/aaaa): "),
+            "endereco": input("Endereço (logradouro, nro - bairro - cidade/UF): "),
+        }
+    )
+    print("Usuário criado!")
+
+
+def criar_conta():
+    cpf = input("CPF do usuário: ")
+    usuario = next((u for u in usuarios if u["cpf"] == cpf), None)
+
+    if not usuario:
+        print("Usuário não encontrado!")
+        return
+
+    contas.append(
+        {
+            "agencia": AGENCIA,
+            "numero": len(contas) + 1,
+            "usuario": usuario,
+            "saldo": 0,
+            "extrato": [],
+            "saques_hoje": 0,
+        }
+    )
+    print(f"Conta criada! Número: {len(contas)}")
+
+
+def selecionar_conta():
+    cpf = input("CPF do titular: ")
+    for conta in contas:
+        if conta["usuario"]["cpf"] == cpf:
+            return conta
+    print("Conta não encontrada!")
+    return None
+
+
+def depositar():
+    conta = selecionar_conta()
+    if not conta:
+        return
+
+    valor = float(input("Valor para depositar: "))
+    if valor > 0:
+        conta["saldo"] += valor
+        conta["extrato"].append(f"Depósito: R$ {valor:.2f}")
+        print("Depósito realizado!")
+    else:
+        print("Valor inválido!")
+
+
+def sacar():
+    conta = selecionar_conta()
+    if not conta:
+        return
+
+    if conta["saques_hoje"] >= 3:
+        print("Limite de saques atingido!")
+        return
+
+    valor = float(input("Valor para sacar: "))
+
+    if valor > 500:
+        print("Limite por saque: R$ 500")
+    elif valor > conta["saldo"]:
+        print("Saldo insuficiente!")
+    elif valor > 0:
+        conta["saldo"] -= valor
+        conta["extrato"].append(f"Saque: R$ {valor:.2f}")
+        conta["saques_hoje"] += 1
+        print("Saque realizado!")
+    else:
+        print("Valor inválido!")
+
+
+def extrato():
+    conta = selecionar_conta()
+    if not conta:
+        return
+
+    print("\n=== EXTRATO ===")
+    for mov in conta["extrato"]:
+        print(mov)
+    print(f"Saldo: R$ {conta['saldo']:.2f}")
+
+
+if __name__ == "__main__":
+    main()
